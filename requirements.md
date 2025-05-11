@@ -1,4 +1,4 @@
-# Requirements
+# Requirements specifications for backend
 
 ## 1. User Authentication
 
@@ -12,46 +12,31 @@
 - **Register**  
   - Request:
     ```json
-    {
-      "first_name": "string",
-      "last_name":  "string",
-      "email":      "email",
-      "password":   "string"
-    }
+    { "first_name":"string", "last_name":"string", "email":"string", "password":"string" }
     ```
-  - Response: `201 Created`
+  - Response `201 Created`:
     ```json
-    {
-      "user_id":   "UUID",
-      "email":     "email",
-      "created_at":"timestamp"
-    }
+    { "user_id":"UUID", "created_at":"timestamp" }
     ```
 - **Login**  
   - Request:
     ```json
-    {
-      "email":    "email",
-      "password": "string"
-    }
+    { "email":"string", "password":"string" }
     ```
-  - Response: `200 OK`
+  - Response `200 OK`:
     ```json
-    {
-      "access_token":"JWT",
-      "expires_in":   3600
-    }
+    { "access_token":"JWT", "expires_in":3600 }
     ```
 
 ### Validation
-- Email must be unique and valid format  
-- Password ≥ 12 chars, mixed case, digits, symbols  
-- Rate limit login: 5 attempts/min per IP
+- `email`: valid format, unique
+- `password`: ≥12 chars, mixed case, digits, symbols
+- Rate limit: 5 login attempts/min per IP
 
-### Performance & Security
-- TLS required  
-- JWT signed with RS256 (2048-bit key)  
-- Response time < 200 ms (95th percentile at 100 RPS)
+### Security & Performance
+- TLS required
+- JWT signed with RS256
+- 95th-percentile response < 200 ms at 100 RPS
 
 ---
 
@@ -69,41 +54,30 @@
   - Request:
     ```json
     {
-      "host_id":         "UUID",
-      "name":            "string",
-      "description":     "string",
-      "location":        "string",
-      "price_per_night": 0.00,
-      "amenities":       ["string"]
+      "host_id":"UUID",
+      "name":"string",
+      "description":"string",
+      "location":"string",
+      "price_per_night":0.00,
+      "amenities":["string"]
     }
     ```
-  - Response: `201 Created`
+  - Response `201 Created`:
     ```json
-    {
-      "property_id":"UUID",
-      "created_at": "timestamp"
-    }
+    { "property_id":"UUID", "created_at":"timestamp" }
     ```
 - **List/Search**  
-  - Query params: `location`, `min_price`, `max_price`, `amenities`, `page`, `limit`  
-  - Response: `200 OK`
-    ```json
-    {
-      "data": [
-        { "property_id":"...", "name":"...", "price_per_night":0 }
-      ],
-      "meta": { "page":1, "limit":20, "total":123 }
-    }
-    ```
+  - Query: `location`, `min_price`, `max_price`, `amenities`, `page`, `limit`
+  - Response `200 OK`: paginated list
 
 ### Validation
-- Name: 5–100 chars  
-- Location: non-empty, ≤ 200 chars  
-- Price_per_night: positive, two decimals max
+- `name`: 5–100 chars
+- `location`: non-empty, ≤ 200 chars
+- `price_per_night`: positive, two decimals max
 
 ### Performance
-- Default `limit=20`, max `limit=100`  
-- Index on `location`, `price_per_night`  
+- Default `limit=20`, max `limit=100`
+- Index on `location`, `price_per_night`
 - Rate limit: 50 req/min per user
 
 ---
@@ -123,12 +97,12 @@
     ```json
     {
       "property_id":"UUID",
-      "user_id":    "UUID",
+      "user_id":"UUID",
       "start_date":"YYYY-MM-DD",
-      "end_date":  "YYYY-MM-DD"
+      "end_date":"YYYY-MM-DD"
     }
     ```
-  - Response: `201 Created`
+  - Response `201 Created`:
     ```json
     {
       "booking_id":"UUID",
@@ -138,47 +112,10 @@
     ```
 
 ### Validation
-- `start_date` < `end_date`  
-- No overlapping bookings on the same property  
-- Status ∈ {pending, confirmed, canceled, completed}
+- `start_date` < `end_date`
+- No overlapping bookings per property
+- `status`: pending | confirmed | canceled | completed
 
-### Performance & Integrity
-- Atomic transaction to prevent double bookings  
-- Response time < 250 ms (95th percentile at 200 RPS)  
-- Trigger notifications on status change
-
----
-
-## 4. Payment Integration
-
-### Endpoints
-- **POST** `/api/v1/payments`
-
-### Request / Response
-- **Create**  
-  - Request:
-    ```json
-    {
-      "booking_id":     "UUID",
-      "amount":         0.00,
-      "payment_method":"credit_card|paypal|stripe"
-    }
-    ```
-  - Response: `201 Created`
-    ```json
-    {
-      "payment_id":"UUID",
-      "status":"processed",
-      "payment_date":"timestamp"
-    }
-    ```
-
-### Validation
-- Amount matches booking total  
-- Method ∈ {credit_card, paypal, stripe}
-
-### Performance & Security
-- PCI-compliant gateway integration  
-- Response time < 300 ms (95th percentile at 100 RPS)  
-- Record payment atomic with booking confirmation
-
+### Performance
+- 95th-percentile response < 250 ms at 200 RPS
+- Atomic transaction to prevent double bookings
